@@ -8,7 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 from mod import Archive, ROOT, NEW, ASAR
 
-HOST_FILES = {'app-shared-122c56612a72.js','rolldown-runtime-2d059c5e81f4.js',
+HOST_FILES = {'app-shared-8bd9d0399038.js','rolldown-runtime-2d059c5e81f4.js',
               'codex-usage-speed.mjs','codex-usage-bar.mjs','codex-usage-metrics.mjs',
               'codex-usage-diff-slot.mjs','codex-usage-native-fixed.mjs'}
 HOST_ARCHIVE = NEW / ASAR
@@ -24,9 +24,9 @@ class Handler(BaseHTTPRequestHandler):
             if path in ['/', '/tests/fixture.html']:
                 html = (ROOT / 'tests/fixture.html').read_text(encoding='utf-8')
                 if WINDOWS:
-                    html = html.replace('cfn as loadReact, eln as loadJSX, Zcn as loadDOM, Qcn as loadPortal',
+                    html = html.replace('PCn as loadReact, Agn as loadJSX, Dgn as loadDOM, Ogn as loadPortal',
                                         'ggn as loadReact, npn as loadJSX, $fn as loadDOM, epn as loadPortal')
-                    html = html.replace('app-shared-122c56612a72.js', 'app-shared-40678a67f0e3.js')
+                    html = html.replace('app-shared-8bd9d0399038.js', 'app-shared-40678a67f0e3.js')
                 data = html.encode('utf-8'); mime = 'text/html'
             elif path.startswith('/__host/') and path.rsplit('/',1)[1] in HOST_FILES:
                 data = Archive(HOST_ARCHIVE).read('webview/assets/' + path.rsplit('/',1)[1]); mime = 'text/javascript'

@@ -13,22 +13,22 @@ import windows_patch
 
 class RendererFixture:
     def __init__(self, adapter):
+        # Each pinned renderer supplies its own bindings; speed behavior remains shared.
+        primary = '\n'.join([
+            'Oe=(0,jR.jsxs)(QL.Item,{children:[ce,De]})',
+            'className:ld(`flex w-full flex-col gap-2`,Ue&&`relative`),onPaste:Yi?Ul:void 0',
+            '(0,WX.jsx)(ae,{initial:!1,children:lu&&s==null?',
+        ])
+        turn = 'function Vo(e){return e}var Ho,Uo,Wo,Go,Ko,qo;'
+        initial = '(gc.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
         if adapter is mod:
             primary = '\n'.join([
-                'Oe=(0,UR.jsxs)(pR.Item,{children:[se,De]})',
-                'className:Lr(`flex w-full flex-col gap-2`,Ne&&`relative`),onPaste:Ri?Dl:void 0',
-                '(0,gZ.jsx)(zt,{initial:!1,children:Jl&&c==null?',
+                'ke=(0,LR.jsxs)(uR.Item,{children:[ue,Oe]})',
+                'className:Sg(`flex w-full flex-col gap-2`,Pe&&`relative`),onPaste:Li?wl:void 0',
+                '(0,QX.jsx)(Vm,{initial:!1,children:Gl&&o==null?',
             ])
-            turn = 'function Ho(e){return e}var Uo,Wo,Go,Ko,qo,Jo;'
-            initial = '(Rs.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
-        else:
-            primary = '\n'.join([
-                'Oe=(0,jR.jsxs)(QL.Item,{children:[ce,De]})',
-                'className:ld(`flex w-full flex-col gap-2`,Ue&&`relative`),onPaste:Yi?Ul:void 0',
-                '(0,WX.jsx)(ae,{initial:!1,children:lu&&s==null?',
-            ])
-            turn = 'function Vo(e){return e}var Ho,Uo,Wo,Go,Ko,qo;'
-            initial = '(gc.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
+            turn = 'function Go(e){return e}var Ko,qo,Jo,Yo,Xo,Zo;'
+            initial = '(Kl.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
         self.files = {
             adapter.PRIMARY: primary,
             adapter.SHARED: 'onNotification(e,t,n=null,r,i=Date.now()){',

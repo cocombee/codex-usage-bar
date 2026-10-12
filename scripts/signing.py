@@ -14,6 +14,7 @@ RESTRICTED_VENDOR_KEYS = frozenset({
     'com.apple.application-identifier',
     'com.apple.developer.aps-environment',
     'com.apple.developer.team-identifier',
+    'com.apple.developer.usernotifications.communication',
     'com.apple.security.application-groups',
     'keychain-access-groups',
 })
@@ -193,6 +194,11 @@ def sign(app):
                     allow = True
             safe = local_entitlements(before['entitlements'], allow_library_loading=allow,
                                       verified_executable_host=allow)
+            if target == app / FRAMEWORK:
+                # codesign omits entitlements on libraries by default on macOS
+                # 15+. Capabilities belong to the main/helper executable hosts;
+                # never force executable entitlements onto this framework seal.
+                safe = {}
             key = str(target.relative_to(app)) if target != app else '.'
             expected[key] = safe
             entitlements = Path(directory) / f'{index}.plist'

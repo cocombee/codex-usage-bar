@@ -23,6 +23,7 @@ Matching archive metadata and passing static signature checks alone are insuffic
    - `com.apple.application-identifier`
    - `com.apple.developer.aps-environment`
    - `com.apple.developer.team-identifier`
+   - `com.apple.developer.usernotifications.communication`
    - `com.apple.security.application-groups`
    - `keychain-access-groups`
 
@@ -31,6 +32,8 @@ Matching archive metadata and passing static signature checks alone are insuffic
 3. The user approved `com.apple.security.cs.disable-library-validation=true` **only for locally signed main/helper executable hosts that need to load Codex Framework**. Scope it to those hosts. Preserve Hardened Runtime. Do not change Gatekeeper, quarantine, or system-wide security.
 
 4. Sign changed leaf executables/helpers first, then their containing framework seals, then the main app. Verify each relevant host's expected entitlements, deep/strict signatures, actual ASAR hashes, and matching native digest. Confirm launcher/framework loading compatibility rather than treating a successful `codesign` command as runtime proof.
+
+   Sign the framework library with an empty entitlement set. macOS 15+ omits library entitlements by default; supported JIT/runtime capabilities and the scoped library-loading exception belong on verified executable hosts. Do not force vendor process entitlements onto the framework seal. The signer and regression tests enforce this distinction.
 
 5. Before declaring a future installation successful, verify a normal launch and rendered UI, then quit and normally reopen the exact installed `/Applications/ChatGPT.app`. A candidate launch, process remaining alive, or static guard cannot substitute for this installed-app verification. Retain the last verified working mod and restore it if the installation fails.
 
@@ -43,3 +46,7 @@ This note records the supplied findings and authorization scope; no new runtime 
 For future work, report build verification, installed-bundle verification, rendered UI verification, and normal installed-app quit/reopen verification separately. Leave authentication and security prompts to the user.
 
 The later user-authorized implementation and one-command installer are documented in [Installation](Installation.md). Source-signing policy checks and process health remain separate from clean-install and native UI acceptance.
+
+## Native tool compatibility on 26.1007
+
+The desktop tool bridge requires OpenAI signing identities for the peer and its parent/grandparent chain. The local mod preserves the nested CLI signature but changes the outer app signature, which fails that requirement. Native chat discovery and chat-to-chat messaging are affected. Ordinary chat can work independently, as observed after this installation. Do not disable peer checks or spoof a vendor identity to restore those tools. See [26.1007 compatibility](Codex%2026.1007%20Compatibility.md).

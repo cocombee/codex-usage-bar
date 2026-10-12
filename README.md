@@ -25,8 +25,10 @@ Missing data appears as `—`, never a fabricated zero. The row adapts to narrow
 
 | Platform | Pinned application | Status |
 | --- | --- | --- |
-| Apple Silicon macOS | Desktop `26.930.61225` | Local installer with validation and recovery; full installed-app acceptance remains pending. |
+| Apple Silicon macOS | Desktop `26.1007.30912` | Installed locally; bar visible and ordinary chat observed. Native desktop tools are unavailable; remaining checks below. |
 | Windows x64 | Store package `26.1002.7124.0`, renderer `26.1002.52244` | Experimental local preview; native rendering observed, full acceptance pending. |
+
+**macOS 26.1007 limitation:** replacing the app signature prevents native desktop tools, including chat discovery and chat-to-chat messaging, from authorizing. Ordinary typing and replies worked in the observed installation. Install only if you accept that limitation; the installer does not bypass signing checks. See the [compatibility record](docs/Codex%2026.1007%20Compatibility.md).
 
 A desktop update needs fresh compatibility review. Changing a version number or bypassing a hash check is not a supported upgrade path.
 
@@ -84,7 +86,7 @@ Automated checks cover metric calculations, responsive layouts, native diff comp
 
 Native application checks are tracked separately:
 
-- **macOS:** the latest installed candidate still needs rendered-UI and normal quit/reopen acceptance; a clean vendor-app end-to-end installation remains unverified.
+- **macOS:** the exact installed 26.1007 candidate and retained vendor rollback copy were verified; the user confirmed the bar is visible, and ordinary chat continued. A further normal quit/reopen of that installed candidate, live metric accuracy and native diff interaction still need acceptance.
 - **Windows:** the row rendered in chats and on new-chat screens, and Weekly matched the core account quota. Live token speed, actual diff interaction, full display-scaling checks and two normal shared-profile launches remain pending.
 - **Both platforms:** token speed is an estimate from desktop lifecycle events, not provider API timing. Passing tests or a healthy process does not establish every live-app behavior.
 

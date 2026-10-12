@@ -6,7 +6,11 @@ In macOS Terminal, from the downloaded repository, run:
 python3 scripts/setup.py
 ```
 
-Requirements: Apple Silicon macOS, Python 3.9+, Node.js 20+, the inspected desktop version `26.930.61225` at `/Applications/ChatGPT.app`, and a writable checkout on the same filesystem as `/Applications` with backup space. Other versions stop without replacement; the installer never guesses new patch anchors or disables validation.
+Requirements: Apple Silicon macOS, Python 3.9+, Node.js 20+, the inspected desktop version `26.1007.30912` at `/Applications/ChatGPT.app`, and a writable checkout on the same filesystem as `/Applications` with backup space. Other versions stop without replacement; the installer never guesses new patch anchors or disables validation.
+
+## Native desktop tool limitation
+
+The local ad-hoc signature prevents the native desktop tool bridge from authorizing on this version. Chat discovery, chat-to-chat messaging and other tools using that bridge are affected. Ordinary typing and replies worked after this installation. Accept this tradeoff before installing; no peer-authorization checks are disabled or spoofed. See [26.1007 compatibility](Codex%2026.1007%20Compatibility.md).
 
 ## Three steps
 
@@ -15,6 +19,12 @@ Requirements: Apple Silicon macOS, Python 3.9+, Node.js 20+, the inspected deskt
 3. Recheck the candidate and exact installed app, close the inspected main process if running, atomically exchange complete bundles, and normally open the installed app once. The app also installs correctly when initially closed. Wait for one healthy main process for ten seconds, prove its mapped main executable and framework inodes match the installed bundle, reject fresh main/helper crash reports, and repeat signature/integrity checks. A pathname alone cannot prove the running build after a bundle exchange. No data, Keychain, Gatekeeper or quarantine reset is involved.
 
 Run `python3 scripts/setup.py --check` for compatibility checks without building, closing or installing. Keep Terminal open until the install result appears. Codex reopens automatically; do not open another copy while installation is in progress. The installer attaches to an already reopened, verified candidate instead of issuing a second launch, and refuses stale or duplicate instances. Run outside Codex so the worker survives the app closing.
+
+## Install an already verified candidate after a manual quit
+
+`python3 -B scripts/install_after_quit.py --candidate-sha256 <SHA256>` uses the candidate hash in `local-build.json`, verifies the recorded source and candidate, then waits up to 20 minutes for the current app to quit normally. Run it from an independent Terminal or a finite one-time worker so it survives Codex closing. Add `--check` for read-only verification.
+
+This helper never quits or launches Codex. After quitting, wait for `installed_awaiting_reopen` in `local-install-after-quit-status.json`, then reopen the app. The same atomic installer retains the original app in `New Build`. An unexpected app instance, changed build or expired wait stops installation. Do not use a persistent or automatically restarting job.
 
 ## Recovery and errors
 
@@ -41,4 +51,4 @@ python3 scripts/setup.py --accept --confirm-rendered-ui --confirm-quit-reopen
 
 This optional command verifies the installed candidate, retained recovery bundles, signatures, fingerprints, and identity of the sole running app before saving your explicit attestation in `local-build.json`. It does not build, install, quit, launch, or delete the recovery app. Process health never grants acceptance automatically. You can update without recording acceptance: the installer preserves the known-working recovery copy first. If either check fails, preserve the receipts and recovery bundles; do not use the acceptance command to bypass a failed check.
 
-An earlier working local mod has reopened successfully. The latest candidate remains pending installed-app acceptance; recovery to an older working build is not acceptance of the candidate. Clean vendor-source policy, timeouts, locking and failure recovery have automated coverage; a clean vendor-app end-to-end install remains unverified. This pinned installer cannot guarantee every macOS environment will launch successfully, so refusal and recovery are part of its contract.
+The 26.1007 candidate was installed from the verified vendor app through the manual-quit path. Its exact running bundle and retained original were verified; the user confirmed the bar appears, and ordinary chat continued. A further normal quit/reopen of the installed candidate, live metric accuracy and native diff interaction remain pending. Recovery to an older build is not acceptance of this candidate. Source-signing policy, timeouts, locking and failure recovery have automated coverage. This pinned installer cannot guarantee every macOS environment will launch successfully, so refusal and recovery are part of its contract.

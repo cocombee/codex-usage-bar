@@ -10,3 +10,7 @@ local-*.log
 local-*.lock
 local-install.command
 .local-windows/
+Update Recovery/
+local-*.command
+local-*.exit
+Restore Original Codex.command
