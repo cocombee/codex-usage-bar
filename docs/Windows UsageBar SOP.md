@@ -29,6 +29,8 @@ A new Store version requires an independently inspected adapter: exact archive/e
 
 ## 3. Install without interrupting work
 
+Before upgrading the native launcher, choose **Exit launcher** from the UsageBar tray menu, or run `CodexUsage.exe --exit` from its installation directory. Confirm the tray process exits normally. The Codex desktop window can remain open. Windows locks a running launcher executable; leaving the tray process running can make an otherwise verified installation fail when replacing it.
+
 ```powershell
 $usageBuild = (Get-Content -Raw .local-windows/latest.json | ConvertFrom-Json).build
 python -B scripts/windows_setup.py --install "$usageBuild"
@@ -38,6 +40,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Persistent launcher installation failed.' }
 ```
 
 Confirm `current.json` selects the verified candidate, retains a previous build, and the native launcher's self-test passes. An `installed-awaiting-launch` receipt does not prove the bar is running.
+
+If installation was interrupted after copying a candidate, retain that unselected attempt for diagnosis. Verify the active pointer before preserving the unselected directory under a distinct name, then rerun installation from the verified source build. Never move a selected or running build, select a partial copy by hand, or delete the previous recovery build.
 
 ## 4. Switch to the mod in this order
 
