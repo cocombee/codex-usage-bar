@@ -15,15 +15,7 @@ import windows_patch_26_1007_9446
 
 class RendererFixture:
     def __init__(self, adapter):
-        if adapter is mod:
-            primary = '\n'.join([
-                'ke=(0,LR.jsxs)(uR.Item,{children:[ue,Oe]})',
-                'className:Sg(`flex w-full flex-col gap-2`,Pe&&`relative`),onPaste:Li?wl:void 0',
-                '(0,QX.jsx)(Vm,{initial:!1,children:Gl&&o==null?',
-            ])
-            turn = 'function Go(e){return e}var Ko,qo,Jo,Yo,Xo,Zo;'
-            initial = '(Kl.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
-        elif adapter is windows_patch:
+        if adapter is windows_patch:
             primary = '\n'.join([
                 'Oe=(0,jR.jsxs)(QL.Item,{children:[ce,De]})',
                 'className:ld(`flex w-full flex-col gap-2`,Ue&&`relative`),onPaste:Yi?Ul:void 0',
@@ -39,8 +31,8 @@ class RendererFixture:
             ])
             turn = 'function Go(e){return e}var Ko,qo,Jo,Yo,Xo,Zo;'
             initial = '(Kl.div,{"aria-hidden":u,className:f,inert:p,initial:m,animate:h,exit:g,transition:_,children:b})'
-            if adapter is windows_patch_26_1007_9446:
-                initial = initial.replace('(Kl.div,', '(Gl.div,')
+        if adapter is windows_patch_26_1007_9446:
+            initial = initial.replace("Kl.div", "Gl.div")
         self.files = {
             adapter.PRIMARY: primary,
             adapter.SHARED: 'onNotification(e,t,n=null,r,i=Date.now()){',
@@ -74,11 +66,11 @@ class SharedSpeedTests(unittest.TestCase):
                 subprocess.run(['node', str(script)], check=True, timeout=15)
 
     def test_new_windows_composer_passes_core_snapshot_to_weekly_metric(self):
-        adapter = windows_patch_26_1007_9446
-        host = adapter.patch_sources(RendererFixture(adapter))[adapter.PRIMARY].decode('utf-8').split('let __cuBar;', 1)[1]
-        with tempfile.TemporaryDirectory() as directory:
-            script = Path(directory) / 'host.mjs'
-            script.write_text('''
+        for adapter in (windows_patch_26_1007, windows_patch_26_1007_9446):
+            host = adapter.patch_sources(RendererFixture(adapter))[adapter.PRIMARY].decode('utf-8').split('let __cuBar;', 1)[1]
+            with tempfile.TemporaryDirectory() as directory:
+                script = Path(directory) / 'host.mjs'
+                script.write_text('''
 import assert from 'node:assert/strict';
 const React={useRef:()=>({current:null})}, jsx={jsx:(type,props)=>({type,props})};
 const weekly={windowDurationMins:10080,usedPercent:9,resetsAt:123456};
@@ -92,7 +84,7 @@ assert.equal(bar.props.entries.length,1);
 assert.deepEqual(bar.props.entries[0].snapshot.secondary,weekly);
 assert.equal(bar.props.usage.last.totalTokens,29);
 ''', encoding='utf-8')
-            subprocess.run(['node', str(script)], check=True, timeout=15)
+                subprocess.run(['node', str(script)], check=True, timeout=15)
 
     def test_packaged_speed_clears_on_completion_for_both_adapters(self):
         # Both adapters read text and normalize a Windows checkout's CRLF.

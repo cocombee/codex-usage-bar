@@ -4,11 +4,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 import argparse
 import json
+import re
 import sys
 sys.dont_write_bytecode = True
-from mod import Archive, ROOT, NEW, ASAR
+from mod import Archive, ROOT, NEW, ASAR, SHARED
 
-HOST_FILES = {'app-shared-8bd9d0399038.js','rolldown-runtime-2d059c5e81f4.js',
+HOST_FILES = {Path(SHARED).name,'rolldown-runtime-2d059c5e81f4.js',
               'codex-usage-speed.mjs','codex-usage-bar.mjs','codex-usage-metrics.mjs',
               'codex-usage-diff-slot.mjs','codex-usage-native-fixed.mjs'}
 HOST_ARCHIVE = NEW / ASAR
@@ -25,9 +26,12 @@ class Handler(BaseHTTPRequestHandler):
             if path in ['/', '/tests/fixture.html']:
                 html = (ROOT / 'tests/fixture.html').read_text(encoding='utf-8')
                 if WINDOWS:
-                    html = html.replace('PCn as loadReact, Agn as loadJSX, Dgn as loadDOM, Ogn as loadPortal',
-                                        f'{WINDOWS_ADAPTER.REACT} as loadReact, {WINDOWS_ADAPTER.JSX} as loadJSX, {WINDOWS_ADAPTER.DOM} as loadDOM, {WINDOWS_ADAPTER.PORTAL} as loadPortal')
-                    html = html.replace('app-shared-8bd9d0399038.js', Path(WINDOWS_ADAPTER.SHARED).name)
+                    replacement = (f'import {{{WINDOWS_ADAPTER.REACT} as loadReact, {WINDOWS_ADAPTER.JSX} as loadJSX, '
+                                   f'{WINDOWS_ADAPTER.DOM} as loadDOM, {WINDOWS_ADAPTER.PORTAL} as loadPortal}} '
+                                   f"from '/__host/{Path(WINDOWS_ADAPTER.SHARED).name}';")
+                    html, count = re.subn(r"import \{[^\n]*\bloadReact\b[^\n]*\} from '/__host/app-shared-[^']+\.js';", replacement, html)
+                    if count != 1:
+                        raise ValueError('Expected one fixture React import')
                 data = html.encode('utf-8'); mime = 'text/html'
             elif path.startswith('/__host/') and path.rsplit('/',1)[1] in HOST_FILES:
                 data = Archive(HOST_ARCHIVE).read('webview/assets/' + path.rsplit('/',1)[1]); mime = 'text/javascript'

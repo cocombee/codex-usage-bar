@@ -4,9 +4,9 @@ See your weekly quota, changed files, response speed and context usage just abov
 
 Codex Usage Bar is a community desktop modification that uses Codex's existing account state, theme and chat-font settings. It adds one compact row while preserving the native composer, Goal controls and Files changed action.
 
-**Weekly → Files changed → Token speed → Context**
+**Weekly â†’ Files changed â†’ Token speed â†’ Context**
 
-[macOS setup](#macos) · [Windows preview](#windows-preview) · [Documentation](#documentation) · [Contributing](CONTRIBUTING.md)
+[macOS setup](#macos) Â· [Windows preview](#windows-preview) Â· [Documentation](#documentation) Â· [Contributing](CONTRIBUTING.md)
 
 ## What it shows
 
@@ -14,10 +14,10 @@ Codex Usage Bar is a community desktop modification that uses Codex's existing a
 | --- | --- |
 | **Weekly** | Account quota remaining and its reset countdown. The progress track shows the same remaining percentage. |
 | **Files changed** | The selected chat's native control, with its existing diff action. |
-| **Token speed** | An approximate, per-chat tokens-per-second estimate, marked `~`, during a running turn. It clears to `—` when the turn finishes or the chat becomes idle. |
+| **Token speed** | An approximate, per-chat tokens-per-second estimate, marked `~`, during a running turn. It clears to `â€”` when the turn finishes or the chat becomes idle. |
 | **Context** | Context usage from the selected conversation's existing token-usage state. |
 
-Missing data appears as `—`, never a fabricated zero. The row adapts to narrow composer widths by shortening labels and spacing; it keeps one row and follows the host's theme and font. Five-hour usage is not implemented.
+Missing data appears as `â€”`, never a fabricated zero. The row adapts to narrow composer widths by shortening labels and spacing; it keeps one row and follows the host's theme and font. Five-hour usage is not implemented.
 
 ## Compatibility
 
@@ -26,7 +26,9 @@ Missing data appears as `—`, never a fabricated zero. The row adapts to narrow
 | Platform | Pinned application | Status |
 | --- | --- | --- |
 | Apple Silicon macOS | Desktop `26.1007.30912` | Installed locally; bar visible and ordinary chat observed. Native desktop tools are unavailable; remaining checks below. |
-| Windows x64 | Store packages `26.1002.7124.0`, `26.1007.2314.0`, `26.1007.9446.0` | Experimental local preview with a persistent GPT-icon launcher; full live acceptance is tracked separately. |
+| Windows x64 | Store package `26.1002.7124.0`, renderer `26.1002.52244` | Experimental local preview; native rendering observed, full acceptance pending. |
+| Windows x64 | Store package `26.1007.2314.0`, renderer `26.1007.21434` | Retained local adapter and recovery build. |
+| Windows x64 | Store package `26.1007.9446.0`, renderer `26.1007.71326` | Exact source hashes, renderer bindings and patch anchors inspected; native acceptance pending. |
 
 **macOS 26.1007 limitation:** replacing the app signature prevents native desktop tools, including chat discovery and chat-to-chat messaging, from authorizing. Ordinary typing and replies worked in the observed installation. Install only if you accept that limitation; the installer does not bypass signing checks. See the [compatibility record](docs/Codex%2026.1007%20Compatibility.md).
 
@@ -72,6 +74,7 @@ python scripts/windows_setup.py --check
 python scripts/windows_setup.py --build
 $build = (Get-Content -Raw .local-windows/latest.json | ConvertFrom-Json).build
 python scripts/windows_setup.py --install "$build"
+python scripts/windows_setup.py --enable-persistence
 ```
 
 Quit all ChatGPT/Codex desktop windows normally, then open **Codex Usage (local mod)** from the Start menu. Keep the Python executable used for installation available.

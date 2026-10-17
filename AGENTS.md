@@ -1,5 +1,7 @@
 # Codex Usage Bar Project Instructions
 
+For Windows install, update, restart or missing-bar repairs, follow [Windows UsageBar SOP](docs/Windows%20UsageBar%20SOP.md). Keep build verification, installed-file verification, exact running-process verification, rendered UI and normal quit/reopen acceptance separate. Record successful acceptance only after it is observed.
+
 ## Startup and signing prevention
 
 Read [Startup And Signing Prevention](docs/Startup%20And%20Signing%20Prevention.md) before future desktop-mod build, signing, installation, or recovery work. These requirements supersede older startup guidance.
