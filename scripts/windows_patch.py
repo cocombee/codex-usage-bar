@@ -13,9 +13,21 @@ SHARED = 'webview/assets/app-shared-40678a67f0e3.js'
 TURN = 'webview/assets/local-conversation-turn-133c4f6f07f4.js'
 INITIAL = 'webview/assets/app-initial-25361a10f2bf.js'
 ASSETS = (PRIMARY, SHARED, TURN, INITIAL)
+BOOTSTRAP = '.vite/build/bootstrap-Dz9A8y86.js'
+APP_ID = 'Cocombee.CodexUsage'
+REACT = 'ggn'
+JSX = 'npn'
+DOM = '$fn'
+PORTAL = 'epn'
 
 
 def patch_sources(archive):
+    bootstrap = archive.read(BOOTSTRAP).decode('utf-8')
+    bootstrap = unique_replace(bootstrap, 'p.app.setAppUserModelId(NY(Q9))',
+        '(p.app.setAppUserModelId("Cocombee.CodexUsage"),typeof p.app.setAppDetails==="function"&&p.app.setAppDetails({appId:"Cocombee.CodexUsage",'
+        'relaunchCommand:\'"\'+process.env.LOCALAPPDATA+\'\\\\OpenAI\\\\CodexUsage\\\\CodexUsage.exe"\','
+        'relaunchDisplayName:"Codex Usage"}),p.app.on("browser-window-created",(_event,window)=>{'
+        'if(typeof window.setIcon==="function")window.setIcon(process.resourcesPath+"/icon-chatgpt.ico")}))', 'Windows persistent taskbar identity')
     primary, shared, turn, initial = (archive.read(path).decode('utf-8') for path in ASSETS)
     primary = unique_replace(primary, 'Oe=(0,jR.jsxs)(QL.Item,{children:[ce,De]})',
                             'Oe=(0,jR.jsxs)(QL.Item,{"data-cu-native-goal":true,children:[ce,De]})', 'Windows Goal marker')
@@ -58,5 +70,5 @@ function __cuHost({conversationId,hostId,rateLimit}){
         for dependency in ['metrics', 'speed', 'diff-slot', 'responsive']:
             source = source.replace("'./" + dependency + ".mjs'", "'./codex-usage-" + dependency + ".mjs'")
         modules['webview/assets/codex-usage-' + name + '.mjs'] = source.encode('utf-8')
-    return {PRIMARY: primary.encode('utf-8'), SHARED: shared.encode('utf-8'),
+    return {BOOTSTRAP: bootstrap.encode('utf-8'), PRIMARY: primary.encode('utf-8'), SHARED: shared.encode('utf-8'),
             TURN: turn.encode('utf-8'), INITIAL: initial.encode('utf-8'), **modules}

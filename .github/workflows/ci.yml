@@ -58,4 +58,7 @@ jobs:
           python -B tests/after_quit.test.py
       - name: Test Windows integrity, deployment, and locking
         if: runner.os == 'Windows'
-        run: python -B tests/windows.test.py
+        run: |
+          python -B tests/windows.test.py
+          python -B tests/windows_manager.test.py
+          python -B tests/windows_launcher.test.py

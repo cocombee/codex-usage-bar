@@ -13,6 +13,7 @@ HOST_FILES = {'app-shared-8bd9d0399038.js','rolldown-runtime-2d059c5e81f4.js',
               'codex-usage-diff-slot.mjs','codex-usage-native-fixed.mjs'}
 HOST_ARCHIVE = NEW / ASAR
 WINDOWS = False
+WINDOWS_ADAPTER = None
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
@@ -25,8 +26,8 @@ class Handler(BaseHTTPRequestHandler):
                 html = (ROOT / 'tests/fixture.html').read_text(encoding='utf-8')
                 if WINDOWS:
                     html = html.replace('PCn as loadReact, Agn as loadJSX, Dgn as loadDOM, Ogn as loadPortal',
-                                        'ggn as loadReact, npn as loadJSX, $fn as loadDOM, epn as loadPortal')
-                    html = html.replace('app-shared-8bd9d0399038.js', 'app-shared-40678a67f0e3.js')
+                                        f'{WINDOWS_ADAPTER.REACT} as loadReact, {WINDOWS_ADAPTER.JSX} as loadJSX, {WINDOWS_ADAPTER.DOM} as loadDOM, {WINDOWS_ADAPTER.PORTAL} as loadPortal')
+                    html = html.replace('app-shared-8bd9d0399038.js', Path(WINDOWS_ADAPTER.SHARED).name)
                 data = html.encode('utf-8'); mime = 'text/html'
             elif path.startswith('/__host/') and path.rsplit('/',1)[1] in HOST_FILES:
                 data = Archive(HOST_ARCHIVE).read('webview/assets/' + path.rsplit('/',1)[1]); mime = 'text/javascript'
@@ -49,7 +50,10 @@ if __name__ == '__main__':
         WINDOWS = True
         build = Path(json.loads((ROOT / '.local-windows/latest.json').read_text(encoding='utf-8'))['build'])
         HOST_ARCHIVE = build / 'app/resources/app.asar'
-        HOST_FILES.add('app-shared-40678a67f0e3.js')
+        from windows_versions import adapter_for
+        receipt = json.loads((build / 'receipt.json').read_text(encoding='utf-8'))
+        WINDOWS_ADAPTER = adapter_for(receipt['package_version'])
+        HOST_FILES.add(Path(WINDOWS_ADAPTER.SHARED).name)
         for name in ['responsive', 'native-layout']:
             HOST_FILES.add('codex-usage-' + name + '.mjs')
     server = HTTPServer(('127.0.0.1', 0), Handler)

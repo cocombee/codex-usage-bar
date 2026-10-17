@@ -19,11 +19,37 @@ from integrity import require, verify_entries, changed_entries
 from mod import Archive, ROOT, sha, verify_unrelated
 import windows_integrity as native
 import windows_patch as patch
+from windows_versions import adapter_for, ADAPTERS
 
 LOCAL = ROOT / '.local-windows'
+
+
+class DesktopInstanceRunning(ValueError):
+    """An app appeared while the verified candidate was being prepared."""
+
+
+class BufferedArchive(Archive):
+    """Keep packed bytes for bulk verification without reopening Drive per entry."""
+    def __init__(self, path):
+        super().__init__(path)
+        self.data = self.path.read_bytes()
+        require(self.data[16:16 + len(self.header_bytes)] == self.header_bytes, 'Archive header changed while reading')
+
+    def read(self, path):
+        node = self.node(path)
+        require('offset' in node, 'Target is not a packed regular file: ' + path)
+        start = self.base + int(node['offset'])
+        data = self.data[start:start + node['size']]
+        require(len(data) == node['size'], 'Truncated ASAR entry: ' + path)
+        expected = node.get('integrity', {}).get('hash')
+        require(not expected or hashlib.sha256(data).hexdigest() == expected, 'ASAR entry integrity mismatch: ' + path)
+        return data
+
 POWERSHELL = str(Path(os.environ.get('SystemRoot', 'C:/Windows')) / 'System32/WindowsPowerShell/v1.0/powershell.exe')
 CREATE_NO_WINDOW = 0x08000000 if os.name == 'nt' else 0
-SCRIPT_NAMES = ('windows_setup.py', 'windows_integrity.py', 'windows_patch.py', 'integrity.py', 'mod.py', 'signing.py')
+SCRIPT_NAMES = ('windows_setup.py', 'windows_integrity.py', 'windows_patch.py', 'integrity.py', 'mod.py', 'signing.py',
+                'windows_versions.py', 'windows_manager.py', 'windows_persistence.py') + tuple(
+                    name + '.py' for name in set(ADAPTERS.values()) if name != 'windows_patch')
 DISPATCHER = '''#!/usr/bin/env python3
 """Select the installed launcher using the same committed pointer as the app."""
 import json
@@ -142,14 +168,20 @@ def exclusive(root):
         lock.close()
 
 
-def discover():
-    platform_guard()
-    result = powershell('''
+def registered_package():
+    return powershell('''
 $p = @(Get-AppxPackage -Name OpenAI.Codex)
 if ($p.Count -ne 1) { throw 'Expected exactly one current-user OpenAI.Codex installation.' }
 $p[0] | Select-Object Name,@{n='Version';e={$_.Version.ToString()}},@{n='Architecture';e={$_.Architecture.ToString()}},InstallLocation,PackageFamilyName,@{n='SignatureKind';e={$_.SignatureKind.ToString()}},@{n='Status';e={$_.Status.ToString()}} | ConvertTo-Json -Compress
 ''')
-    require(result['Version'] == patch.VERSION and result['Architecture'].lower() == 'x64',
+
+
+def discover():
+    global patch
+    platform_guard()
+    result = registered_package()
+    patch = adapter_for(result['Version'])
+    require(result['Architecture'].lower() == 'x64',
             'Uninspected Windows package: ' + result['Version'] + '/' + result['Architecture'])
     require(result['SignatureKind'] == 'Store' and result['Status'] == 'Ok', 'Source package is not a healthy Store installation')
     package = Path(result['InstallLocation']).resolve(strict=True)
@@ -192,7 +224,9 @@ def inventory(root):
 def verify_build(build):
     build = Path(build).resolve(strict=True)
     receipt = read_json(build / 'receipt.json')
-    require(receipt['schema'] == 1 and receipt['package_version'] == patch.VERSION, 'Unsupported build receipt')
+    require(receipt['schema'] == 1, 'Unsupported build receipt')
+    recorded_adapter = adapter_for(receipt['package_version'])
+    require(receipt['files'].get('chrome.dll') == recorded_adapter.PINNED['chrome.dll'], 'Recorded runtime differs from its inspected source')
     app = build / 'app'
     require(inventory(app) == receipt['files'], 'Installed files differ from the verified build')
     require(native.verify_pair(app) == receipt['integrity'], 'Installed native integrity changed')
@@ -220,12 +254,13 @@ def build():
             require(inventory(app) == original_files, 'Source changed during copy')
             for name, expected in patch.PINNED.items():
                 require(sha(app / name) == expected, 'Copied source pin mismatch: ' + name)
-            archive = Archive(app / 'resources/app.asar')
+            archive = BufferedArchive(app / 'resources/app.asar')
             before_hash = original_integrity['header_sha256']
             new_hash = archive.write(app / 'resources/app.asar', replacements)
+            del archive
             (app / 'ChatGPT.exe').write_bytes(native.rewrite_launcher((app / 'ChatGPT.exe').read_bytes(), before_hash, new_hash))
             candidate = Archive(app / 'resources/app.asar')
-            verify_unrelated(Archive(source / 'resources/app.asar'), candidate, replacements)
+            verify_unrelated(BufferedArchive(source / 'resources/app.asar'), BufferedArchive(app / 'resources/app.asar'), replacements)
             require(changed_entries(source / 'resources/app.asar', app / 'resources/app.asar') == sorted(replacements),
                     'Unexpected archive changes')
             verify_entries(app / 'resources/app.asar', list(replacements))
@@ -236,7 +271,9 @@ def build():
 @($args | ForEach-Object { $s=Get-AuthenticodeSignature -LiteralPath $_; [pscustomobject]@{Status=$s.Status.ToString()} }) | ConvertTo-Json -Compress
 ''', app / 'ChatGPT.exe', app / 'chrome.dll')
             require([s['Status'] for s in signatures] == ['NotSigned', 'Valid'], 'Unexpected candidate signature state')
+            from windows_persistence import engine_fingerprint
             receipt = {'schema': 1, 'created_at': now(), 'package_version': patch.VERSION,
+                       'engine_fingerprint': engine_fingerprint(ROOT),
                        'app_version': patch.APP_VERSION, 'architecture': 'x64', 'distribution': 'local-unpackaged-copy',
                        'source_package': package['PackageFamilyName'], 'source_pins': patch.PINNED,
                        'files': files, 'integrity': native.verify_pair(app), 'changed_entries': sorted(replacements),
@@ -323,6 +360,14 @@ $link.Save()
             Path(shortcut['Temporary']).unlink(missing_ok=True)
         atomic_json(pointer_path, {'current': target.name, 'previous': old['current'] if old else None,
                                    'installed_at': now(), 'state': 'installed-awaiting-launch'})
+        if (root / 'launcher-config.json').exists():
+            from windows_persistence import install as install_persistence
+            try:
+                install_persistence(root)
+            except BaseException:
+                if old:
+                    atomic_json(pointer_path, old)
+                raise
         return {'installation': str(root), 'shortcut': shortcut['Path'], 'build': target.name}
 
 
@@ -350,7 +395,8 @@ def launch():
         require(pointer.get('state') != 'launch-failed', 'This build failed startup. Use the original Store app or install a repaired build.')
         build_path = current_build(root, pointer['current'])
         verify_build(build_path)
-        require(not app_processes(), 'Close all ChatGPT/Codex desktop windows normally, then open Codex Usage again. No app was stopped.')
+        if app_processes():
+            raise DesktopInstanceRunning('Another Codex instance is running. Quit it normally; use Codex Usage (local mod) to reopen.')
         exe = build_path / 'app/ChatGPT.exe'
         environment = os.environ.copy()
         # Use the normal host profile without copying credentials or history.
@@ -415,6 +461,7 @@ def main():
     actions.add_argument('--launch', action='store_true')
     actions.add_argument('--rollback', action='store_true')
     actions.add_argument('--accept', action='store_true')
+    actions.add_argument('--enable-persistence', action='store_true')
     for flag in ['rendered-ui', 'live-metrics', 'diff-interaction', 'quit-reopen']:
         parser.add_argument('--confirm-' + flag, action='store_true')
     args = parser.parse_args()
@@ -434,6 +481,9 @@ def main():
             launch()
         elif args.rollback:
             rollback()
+        elif args.enable_persistence:
+            from windows_persistence import install as install_persistence
+            print(json.dumps(install_persistence(), indent=2))
         else:
             accept(confirmations)
     except (Exception, KeyboardInterrupt) as error:

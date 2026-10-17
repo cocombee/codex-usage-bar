@@ -26,7 +26,7 @@ Missing data appears as `—`, never a fabricated zero. The row adapts to narrow
 | Platform | Pinned application | Status |
 | --- | --- | --- |
 | Apple Silicon macOS | Desktop `26.1007.30912` | Installed locally; bar visible and ordinary chat observed. Native desktop tools are unavailable; remaining checks below. |
-| Windows x64 | Store package `26.1002.7124.0`, renderer `26.1002.52244` | Experimental local preview; native rendering observed, full acceptance pending. |
+| Windows x64 | Store packages `26.1002.7124.0`, `26.1007.2314.0`, `26.1007.9446.0` | Experimental local preview with a persistent GPT-icon launcher; full live acceptance is tracked separately. |
 
 **macOS 26.1007 limitation:** replacing the app signature prevents native desktop tools, including chat discovery and chat-to-chat messaging, from authorizing. Ordinary typing and replies worked in the observed installation. Install only if you accept that limitation; the installer does not bypass signing checks. See the [compatibility record](docs/Codex%2026.1007%20Compatibility.md).
 

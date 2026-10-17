@@ -2,7 +2,7 @@
 
 ## Status and installation
 
-An experimental local x64 Windows port supports Store package `OpenAI.Codex` **26.1002.7124.0**, renderer **26.1002.52244**. Native rendering has been observed; full acceptance remains pending. Requires Python 3.10+, that exact current-user Store package and approximately 6 GB free space for build and installation. Unknown versions fail before copying.
+The experimental local x64 Windows port supports inspected Store packages `OpenAI.Codex` **26.1002.7124.0**, **26.1007.2314.0**, and **26.1007.9446.0**, with renderer versions **26.1002.52244**, **26.1007.21434**, and **26.1007.71326**, respectively. Requires Python 3.10+, one of those exact current-user Store packages and approximately 6 GB free space for build and installation. Unknown versions fail before copying.
 
 From the repository in PowerShell:
 
@@ -11,9 +11,18 @@ python scripts/windows_setup.py --check
 python scripts/windows_setup.py --build
 $build = (Get-Content -Raw .local-windows/latest.json | ConvertFrom-Json).build
 python scripts/windows_setup.py --install "$build"
+python scripts/windows_setup.py --enable-persistence
 ```
 
 The separate copy installs under `%LOCALAPPDATA%\OpenAI\CodexUsage`, with a **Codex Usage (local mod)** Start menu shortcut. Quit all ChatGPT/Codex desktop windows normally, then open it. Installation does not stop the running app. The shortcut uses the Python executable that performed installation; keep it available.
+
+Persistence installs a stable `CodexUsage.exe` launcher with the GPT icon, an immutable local engine snapshot and a per-user Startup shortcut. Pin **Codex Usage (local mod)** from the Start menu and replace the Store taskbar pin. The pin targets the stable launcher rather than a build-specific executable. The launcher must start through Explorer or the Start menu so it survives Codex quitting.
+
+The independent tray manager checks Store updates every minute. Supported updates are copied and verified after a normal quit; unknown versions retain the last verified mod and report that a tested adapter is needed. It respects manual quits, and opening the pinned shortcut requests another launch. It does not download executable Git code. Exit the tray launcher and remove its Startup shortcut to disable login startup. `CodexUsage.exe --exit` closes only the launcher for maintenance.
+
+The current Owl runtime lacks `app.setAppDetails`; Windows adapters guard that optional API. Window creation applies the verified GPT icon explicitly so the unpackaged app does not display a generic icon. Both the shortcuts and windows use `Cocombee.CodexUsage`. Startup failures retain their diagnostic and do not repeatedly rebuild the failed candidate until a new request. Local diagnostics are `manager-status.json`, `launcher-error.log`, and `current.json` in the installation root.
+
+If the Store app reopens during full verification, the manager retains the pending launch and waits for a normal quit. It does not reject the candidate or launch a second desktop instance.
 
 The normal launcher uses the usual profile without copying credentials or history. It verifies the whole installed tree, refuses concurrent desktop instances, and observes the exact launched executable for 12 seconds. Process health does not establish UI correctness. An unpackaged copy may not support every Store integration; sandbox setup, protocol activation, updating and account behavior need native acceptance.
 
@@ -31,7 +40,8 @@ python "$env:LOCALAPPDATA\OpenAI\CodexUsage\windows_setup.py" --launch
 
 ## Implementation and packaging
 
-- `scripts/windows_patch.py` contains exact source pins and renderer bindings for this Windows build.
+- `scripts/windows_versions.py` selects a version-specific adapter with exact source pins and renderer bindings. Each supported version has inspected hooks; compatibility is not inferred from its version number.
+- `src/windows-launcher.cs`, `scripts/windows_manager.py`, and `scripts/windows_persistence.py` provide taskbar identity, GPT icons, per-user startup, and the supported-update manager.
 - `scripts/windows_integrity.py` parses the launcher's PE resource directory with bounds/uniqueness checks and synchronizes its `INTEGRITY` / `ELECTRONASAR` header hash. The runtime DLL's integrity fuses remain enabled.
 - `scripts/windows_setup.py` implements registered-package discovery, Authenticode checks, build verification, per-user deployment, locking, launch checks, rollback and acceptance receipts.
 
@@ -82,6 +92,8 @@ Recorded on Windows 11 build 26200:
 - The macOS integrity tests were attempted on Windows but could not create their framework symlink fixtures because this account lacks Windows symlink privileges. They did not pass on Windows; macOS installation/process-group/atomic-exchange tests require a Mac.
 
 ## Native acceptance still required
+
+For Store `26.1007.9446.0`, source signatures and pins, native digest/fuses, all 12 intended archive changes, and the installed engine were verified. The actual shared-profile chat rendered Weekly, token speed, and Context above Goal. The stable taskbar shortcut points to `CodexUsage.exe` and uses the GPT icon. Automated checks cover 22 Windows deployment cases, 11 manager cases, three compiled launcher checks, three packaged-renderer contracts, 19 shared JavaScript cases, and six signing-policy cases. A further normal quit/reopen of the exact installed candidate, live token-speed accuracy, native diff interaction, and full display scaling remain pending; the full acceptance receipt has not been marked accepted.
 
 1. Compare the Weekly countdown with the native usage panel; the remaining percentage and core bucket have been checked.
 2. Compare Context with the current chat and check token speed during a real response, across chats and hosts. Confirm speed clears to `—` on completion, interruption or idle status, and that a new turn waits for a fresh sample. Windows uses the same lifecycle observer as macOS.
