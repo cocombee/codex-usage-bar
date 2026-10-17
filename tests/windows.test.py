@@ -1,5 +1,6 @@
 """Synthetic PE fixtures plus Windows locking/deployment failure tests."""
 import json
+import hashlib
 import os
 from contextlib import ExitStack, contextmanager, nullcontext
 from pathlib import Path
@@ -14,6 +15,33 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import windows_integrity as native
 import windows_setup as setup
+
+
+class BufferedArchiveTests(unittest.TestCase):
+    def make_archive(self, path):
+        body = b'original retained'
+        tree = {'files': {'first.js': {'size':8,'offset':'0','integrity':{'hash':hashlib.sha256(body[:8]).hexdigest()}},
+                          'second.js': {'size':9,'offset':'8','integrity':{'hash':hashlib.sha256(body[8:]).hexdigest()}}}}
+        header = json.dumps(tree).encode()
+        payload = struct.pack('<I',len(header)) + header
+        payload += b'\0' * (-len(payload) % 4)
+        path.write_bytes(struct.pack('<III',4,len(payload)+4,len(payload)) + payload + body)
+
+    def test_bulk_writer_preserves_retained_entry_and_verifiable_replacement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'app.asar'
+            self.make_archive(path)
+            setup.BufferedArchive(path).write(path, {'first.js': b'updated content'})
+            self.assertEqual(setup.Archive(path).read('first.js'),b'updated content')
+            self.assertEqual(setup.Archive(path).read('second.js'),b' retained')
+
+    def test_bulk_reader_rejects_corrupt_entry_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'app.asar'
+            self.make_archive(path)
+            data = bytearray(path.read_bytes());data[-1] ^= 1;path.write_bytes(data)
+            with self.assertRaisesRegex(ValueError,'integrity mismatch'):
+                setup.BufferedArchive(path).read('second.js')
 
 
 def executable(digest='a' * 64):

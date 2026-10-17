@@ -92,6 +92,12 @@ Recorded on Windows 11 build 26200:
 
 ## Native acceptance still required
 
+For Store `26.1007.9446.0`, the installed build passed full file and native-integrity verification, and its immutable engine matched the repository source. The actual shared-profile chat rendered Weekly, token speed and Context above Goal. The stable taskbar shortcut targets `CodexUsage.exe`; its configured icon and the GPT icon embedded in the installed launcher were verified without changing the desktop.
+
+Automated checks passed: 22 Windows deployment cases, 11 manager cases, three compiled launcher checks, three packaged-renderer contracts, 19 shared JavaScript cases and six signing-policy cases. The deployment suite now explicitly checks that buffered archive writes preserve untouched entries and that corrupted packed bytes fail integrity validation.
+
+A further normal quit/reopen of the exact installed candidate, live token-speed accuracy, native diff interaction and full display scaling remain pending. The full acceptance receipt has not been marked accepted. These background checks do not replace the live observations below.
+
 1. Compare the Weekly countdown with the native usage panel; the remaining percentage and core bucket have been checked.
 2. Compare Context with the current chat and check token speed during a real response, across chats and hosts. Confirm speed clears to `â€”` on completion, interruption or idle status, and that a new turn waits for a fresh sample. Windows uses the same lifecycle observer as macOS.
 3. Open the actual Files changed diff; check plans, Goal and other native controls.
